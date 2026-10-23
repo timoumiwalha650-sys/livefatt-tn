@@ -1,10 +1,8 @@
-'vulnerable'
 'use client';
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// إنشاء اتصال Supabase باستخدام متغيرات البيئة
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -24,10 +22,8 @@ export default function LiveFattHome() {
   const [streamUrl, setStreamUrl] = useState('https://www.youtube.com/embed/live_stream?channel=YOUR_CHANNEL_ID');
 
   useEffect(() => {
-    // جلب الرسائل القديمة عند فتح الصفحة
     fetchMessages();
 
-    // تفعيل الاستماع الفوري للرسائل الجديدة (Realtime)
     const channel = supabase
       .channel('public:chat_messages')
       .on(
@@ -86,7 +82,6 @@ export default function LiveFattHome() {
       </header>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* قسم مشغل البث */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-gray-800 shadow-2xl">
             <iframe
@@ -102,13 +97,11 @@ export default function LiveFattHome() {
           </div>
         </div>
 
-        {/* قسم الدردشة الحية (Live Chat) */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl flex flex-col h-[500px] lg:h-auto overflow-hidden shadow-xl">
           <div className="p-4 bg-gray-900/80 border-b border-gray-800 font-semibold text-sm text-gray-300">
             الدردشة المباشرة
           </div>
 
-          {/* صندوق عرض الرسائل */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col">
             {messages.length === 0 ? (
               <p className="text-gray-500 text-center my-auto text-sm">لا توجد رسائل بعد، كن أول المزارعين المشاركين!</p>
@@ -122,7 +115,6 @@ export default function LiveFattHome() {
             )}
           </div>
 
-          {/* نموذج إرسال الرسائل */}
           <form onSubmit={sendMessage} className="p-3 bg-gray-950 border-t border-gray-800 flex flex-col gap-2">
             <input
               type="text"
