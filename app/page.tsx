@@ -1,136 +1,74 @@
-'use client';
+vimport React from 'react';
 
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-interface Message {
-  id?: string;
-  sender: string;
-  text: string;
-  created_at?: string;
-}
-
-export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: true });
-      if (data) setMessages(data);
-    };
-
-    fetchMessages();
-
-    const channel = supabase
-      .channel('public:messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as Message]);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || loading) return;
-
-    const userText = inputText;
-    setInputText('');
-    setLoading(true);
-
-    // حفظ رسالة الزبون في Supabase
-    await supabase.from('messages').insert([{ sender: 'User', text: userText }]);
-
-    // رد ترحيبي ذكي من المساعدة "مريم"
-    setTimeout(async () => {
-      const maryemReply = "أهلاً بك! توصيل لجميع ولايات تونس في 24-48 ساعة والدفع عند الاستلام. شارك البث لنستفيد معاً! 🇹🇳";
-      await supabase.from('messages').insert([{ sender: 'مريم (AI)', text: maryemReply }]);
-      setLoading(false);
-    }, 1000);
-  };
-
+export default function LiveFattPage() {
   return (
-    <main className="flex flex-col h-screen bg-gray-950 text-white font-sans">
-      <header className="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-red-500">LiveFatt TN 🇹🇳</h1>
-          <p className="text-xs text-gray-400">البث المباشر والمساعد الذكي مريم</p>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      {/* Header */}
+      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+          <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+            LiveFatt TN
+          </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
-          <span className="text-sm font-medium text-green-400">مباشر (LIVE)</span>
-        </div>
+        <span className="px-3 py-1 text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">
+          مباشر الآن
+        </span>
       </header>
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 bg-black flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-800 relative">
-          <div className="text-center p-6">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-600 flex items-center justify-center text-2xl font-bold">
-              🎥
-            </div>
-            <h2 className="text-lg font-semibold">شاشة البث المباشر</h2>
-            <p className="text-sm text-gray-500 mt-1">توصيل لجميع الولايات | الدفع عند الاستلام</p>
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Video Player Section */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+            <iframe
+              className="w-full h-full border-0"
+              src="https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?autoplay=0&controls=1"
+              title="Live Stream"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 flex flex-col gap-2">
+            <h2 className="text-lg font-bold text-slate-100">بث مباشر حصري - LiveFatt TN</h2>
+            <p className="text-sm text-slate-400">تفاعل معنا مباشرة عبر الدردشة الحية واكتشف أفضل العروض والمنتجات المتاحة في تونس.</p>
           </div>
         </div>
 
-        <div className="w-full md:w-96 flex flex-col bg-gray-900">
-          <div className="p-3 border-b border-gray-800 bg-gray-900/50">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <span>💬</span> الدردشة المباشرة مع مريم
-            </h3>
+        {/* Live Chat Section */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-col h-[500px] lg:h-auto overflow-hidden shadow-xl">
+          <div className="p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-200">الدردشة المباشرة</h3>
+            <span className="text-xs text-slate-500">مباشر</span>
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto space-y-3">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col ${msg.sender === 'User' ? 'items-end' : 'items-start'}`}
-              >
-                <span className="text-[10px] text-gray-400 mb-1">{msg.sender}</span>
-                <div
-                  className={`p-3 rounded-lg max-w-[85%] text-sm ${
-                    msg.sender === 'User'
-                      ? 'bg-red-600 text-white rounded-br-none'
-                      : 'bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-            {loading && <div className="text-xs text-gray-500 animate-pulse">مريم تكتب الآن...</div>}
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 text-sm">
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3">
+              <span className="font-semibold text-orange-400 block mb-1">متابع تونسي</span>
+              <p className="text-slate-300">أهلاً بكم! كم سعر هذا المنتج؟</p>
+            </div>
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3">
+              <span className="font-semibold text-red-400 block mb-1">LiveFatt TN</span>
+              <p className="text-slate-300">مرحباً بك! يمكنك التواصل معنا مباشرة للحصول على التفاصيل السريعة.</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex gap-2">
+          <form onSubmit={(e) => e.preventDefault()} className="p-3 border-t border-slate-800 bg-slate-900 flex gap-2">
             <input
               type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="اكتب سؤالك بالدارجة التونسية..."
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-white"
+              placeholder="اكتب رسالتك هنا..."
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 transition-colors"
             />
             <button
               type="submit"
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-orange-950/20"
             >
               إرسال
             </button>
           </form>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
