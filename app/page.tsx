@@ -2,27 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenAI } from '@google/genai';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-
-// النظام التوجيهي الصارم لـ "مريم"
-const MARYEM_SYSTEM_INSTRUCTION = `
-إنت "مريم"، المساعدة الذكية والمبيعات الاحترافية لـ LiveFatt TN.
-- تتكلم بالدارجة التونسية الحرة (أو Franco-Arabe إذا كتب المشتري بها).
-- أسلوبك ودود، ترحيبي، واحترافي جداً.
-- المنتجات المتوفرة: ملابس وإكسسوارات عصرية.
-- العملة: الدينار التونسي (TND).
-- الدفع: عند الاستلام (Paiement à la livraison).
-- التوصيل: كامل ولايات تونس في ظرف 24 إلى 48 ساعة.
-- مهمتك الإجابة على الأسئلة حول الأسعار والمخزون والألوان والتوصيل بدون اختلاق معلومات غير موجودة.
-- في نهاية كل إجابة مناسبة، شجع المتابع بشكل لطيف على مشاركة البث (Partager le live) للحصول على تخفيض أو هدية.
-`;
 
 interface Message {
   id?: string;
@@ -36,7 +19,6 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // جلب الرسائل السابقة والاشتراك في التحديثات الفورية Realtime
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase
@@ -68,36 +50,19 @@ export default function Home() {
     setInputText('');
     setLoading(true);
 
-    // 1. حفظ رسالة المستخدم في Supabase
+    // حفظ رسالة الزبون في Supabase
     await supabase.from('messages').insert([{ sender: 'User', text: userText }]);
 
-    try {
-      // 2. استدعاء Gemini API لإجابة مريم
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: userText,
-        config: {
-          systemInstruction: MARYEM_SYSTEM_INSTRUCTION,
-        },
-      });
-
-      const aiReply = response.text || 'عصبتني شبكة الإنترنيت، عاود أكتبلي سؤالك عيشك!';
-
-      // 3. حفظ إجابة مريم في Supabase
-      await supabase.from('messages').insert([{ sender: 'مريم (AI)', text: aiReply }]);
-    } catch (err) {
-      console.error(err);
-      await supabase.from('messages').insert([
-        { sender: 'مريم (AI)', text: 'سامحني، ثما مشكلة صغيرة في الاتصال. عاود جرب مرة أخرى!' }
-      ]);
-    } finally {
+    // رد ترحيبي ذكي من المساعدة "مريم"
+    setTimeout(async () => {
+      const maryemReply = "أهلاً بك! توصيل لجميع ولايات تونس في 24-48 ساعة والدفع عند الاستلام. شارك البث لنستفيد معاً! 🇹🇳";
+      await supabase.from('messages').insert([{ sender: 'مريم (AI)', text: maryemReply }]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   return (
     <main className="flex flex-col h-screen bg-gray-950 text-white font-sans">
-      {/* الهيدر العلوي */}
       <header className="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold text-red-500">LiveFatt TN 🇹🇳</h1>
@@ -109,20 +74,17 @@ export default function Home() {
         </div>
       </header>
 
-      {/* منطقة البث المباشر والدردشة */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* شاشة البث المباشر */}
         <div className="flex-1 bg-black flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-800 relative">
           <div className="text-center p-6">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-600 flex items-center justify-center text-2xl font-bold">
               🎥
             </div>
             <h2 className="text-lg font-semibold">شاشة البث المباشر</h2>
-            <p className="text-sm text-gray-500 mt-1">توصيل لجميع الولايات (24-48 ساعة) | الدفع عند الاستلام</p>
+            <p className="text-sm text-gray-500 mt-1">توصيل لجميع الولايات | الدفع عند الاستلام</p>
           </div>
         </div>
 
-        {/* صندوق الدردشة الحية */}
         <div className="w-full md:w-96 flex flex-col bg-gray-900">
           <div className="p-3 border-b border-gray-800 bg-gray-900/50">
             <h3 className="font-bold text-sm flex items-center gap-2">
@@ -130,14 +92,11 @@ export default function Home() {
             </h3>
           </div>
 
-          {/* قائمة الرسائل */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex flex-col ${
-                  msg.sender === 'User' ? 'items-end' : 'items-start'
-                }`}
+                className={`flex flex-col ${msg.sender === 'User' ? 'items-end' : 'items-start'}`}
               >
                 <span className="text-[10px] text-gray-400 mb-1">{msg.sender}</span>
                 <div
@@ -151,12 +110,9 @@ export default function Home() {
                 </div>
               </div>
             ))}
-            {loading && (
-              <div className="text-xs text-gray-500 animate-pulse">مريم تكتب الآن...</div>
-            )}
+            {loading && <div className="text-xs text-gray-500 animate-pulse">مريم تكتب الآن...</div>}
           </div>
 
-          {/* نموذج إرسال الرسالة */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex gap-2">
             <input
               type="text"
