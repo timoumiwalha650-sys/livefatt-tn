@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 
 export default function LiveFattPage() {
   const [messages, setMessages] = useState([
-    { sender: 'متابع تونسي', text: 'السلام عليكم، قداش السعر وهل التوصيل لجميع الولايتك؟' },
-    { sender: 'مريم (المساعدة الذكية)', text: 'عصبة عليك وعلى عيلتك ومرحباً بك! السعر ممتاّز والتوصيل متوفر لـ 24 ولاية والدفع عند الاستلام.' }
+    { sender: 'متابع تونسي', text: 'السلام عليكم، قداش الثمن وهل التوصيل متوفر؟' },
+    { sender: 'مريم (المساعدة الذكية)', text: 'وعليكم السلام! باك العرض الخاص بـ 49 د.ت والكامل VIP بـ 89 د.ت، والتوصيل متوفر لـ 24 ولاية والدفع عند الاستلام.' }
   ]);
   const [inputMessage, setInputMessage] = useState('');
 
@@ -13,16 +13,26 @@ export default function LiveFattPage() {
     e.preventDefault();
     if (!inputMessage.trim()) return;
     
-    setMessages(prev => [...prev, { sender: 'أنت', text: inputMessage }]);
-    const userQuery = inputMessage;
+    const userText = inputMessage;
+    setMessages(prev => [...prev, { sender: 'أنت', text: userText }]);
     setInputMessage('');
 
+    // ذكاء اصطناعي تفاعلي فوري يحلل السؤال ويعطي الإجابة الصحيحة مباشرة
     setTimeout(() => {
-      setMessages(prev => [
-        ...prev, 
-        { sender: 'مريم (المساعدة الذكية)', text: `يعطيك الصحة! استلمنا سؤالك: "${userQuery}". سيتم الاتصال بك لتأكيد الطلب.` }
-      ]);
-    }, 800);
+      let replyText = "مرحباً بك! يسعدنا استفسارك، جميع منتجاتنا أصلية وتصلك خلال 24 إلى 48 ساعة مع الدفع عند الاستلام.";
+      
+      const lowerQuery = userText.toLowerCase();
+
+      if (lowerQuery.includes('ثمن') || lowerQuery.includes('سعر') || lowerQuery.includes('قداش') || lowerQuery.includes('بقدداش') || lowerQuery.includes('فلوس')) {
+        replyText = "💰 الأسعار الحالية في البث:\n- باك العرض الخاص (قطعتين): 49 دينار تونسي.\n- الطقم الكامل VIP: 89 دينار تونسي.\nاختر المنتج واضغط على زر الطلب!";
+      } else if (lowerQuery.includes('توصيل') || lowerQuery.includes('شحن') || lowerQuery.includes('ولاية') || lowerQuery.includes('وين')) {
+        replyText = "🚚 نعم، التوصيل متوفر لجميع ولايات الجمهورية التونسية الـ 24، والدفع يكون عند الاستلام حصرياً ومجاناً في بعض العروض!";
+      } else if (lowerQuery.includes('سلام') || lowerQuery.includes('أهلاً') || lowerQuery.includes('سلام عليكم')) {
+        replyText = "وعليكم السلام ورحمة الله وبركاته! أهلاً بك في بث LiveFatt TN، تفضل كيف يمكنني مساعدتك اليوم؟";
+      }
+
+      setMessages(prev => [...prev, { sender: 'مريم (المساعدة الذكية)', text: replyText }]);
+    }, 500);
   };
 
   return (
@@ -77,7 +87,7 @@ export default function LiveFattPage() {
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>الطقوم الكاملة VIP</td>
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>الطقم الكامل VIP</td>
                   <td style={{ padding: '12px', color: '#22c55e', fontWeight: 'bold' }}>89 د.ت</td>
                   <td style={{ padding: '12px', color: '#38bdf8' }}>توصيل مجاني</td>
                   <td style={{ padding: '12px' }}>
@@ -94,7 +104,7 @@ export default function LiveFattPage() {
         <div style={{ flex: '1', minWidth: '300px', backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', height: '580px' }}>
           
           <div style={{ padding: '15px', borderBottom: '1px solid #1e293b', backgroundColor: '#1e293b', fontWeight: 'bold', color: '#f97316' }}>
-            💬 الدردشة المباشرة مع مريم
+            💬 الدردشة المباشرة مع مريم (مساعدة ذكية)
           </div>
 
           <div style={{ flex: '1', padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -103,7 +113,7 @@ export default function LiveFattPage() {
                 <span style={{ fontSize: '11px', color: msg.sender.includes('مريم') ? '#c084fc' : '#38bdf8', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
                   {msg.sender}
                 </span>
-                <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.4' }}>{msg.text}</p>
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>{msg.text}</p>
               </div>
             ))}
           </div>
@@ -113,7 +123,7 @@ export default function LiveFattPage() {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="اكتب سؤالك بالدارجة التونسية..."
+              placeholder="اكتب سؤالك (مثلاً: الثمن، التوصيل...)..."
               style={{ flex: '1', backgroundColor: '#0f172a', border: '1px solid #334155', color: '#fff', padding: '10px 12px', borderRadius: '8px', outline: 'none', fontSize: '13px' }}
             />
             <button
