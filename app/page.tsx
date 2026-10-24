@@ -22,7 +22,7 @@ export default function LiveFattPage() {
           <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px', border: '1px solid #1e293b', backgroundColor: '#000' }}>
             <iframe
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-              src="https://www.youtube-nocookie.com/embed/jfKfPfyJRdk"
+              src="https://www.youtube-nocookie.com/embed/5qap5aO4i9A"
               title="Live Stream"
               allowFullScreen
             />
