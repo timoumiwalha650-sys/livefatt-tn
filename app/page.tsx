@@ -1,26 +1,28 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from '@google/genai';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// تهيئة محرك Gemini باستخدام المفتاح المستخرج
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey: apiKey });
+
 export default function LiveFattPage() {
-  // Order state
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Chat state
   const [messages, setMessages] = useState<any[]>([]);
   const [chatUser, setChatUser] = useState('');
   const [chatContent, setChatContent] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
-  // Fetch initial messages & subscribe to real-time changes
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase
@@ -44,7 +46,6 @@ export default function LiveFattPage() {
     };
   }, []);
 
-  // Handle order submission
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setOrderLoading(true);
@@ -61,28 +62,50 @@ export default function LiveFattPage() {
     }
   };
 
-  // Handle chat submission
+  // استدعاء ذكاء Gemini التونسي الاحترافي للمبيعات
+  const generateAiSalesReply = async (userText: string) => {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: userText,
+        config: {
+          systemInstruction: `أنتِ مريم، مسؤولة مبيعات ودودة واحترافية جداً في منصة البث المباشر التونسية "LiveFatt TN". 
+          قواعدك الصارمة:
+          1. تحدثي دائماً بالدارجة التونسية العفوية والقريبة للقلب (أو بالـ Franco-Arabe إذا كتب العميل بها). إياك أن تتحدثي بالمصرية أو الخليجية.
+          2. معلومات المنتج الأساسية: اسم المنتج "منتج LiveFatt التجريبي"، السعر 49 TND، والتوصيل متوفر لكامل ولايات الجمهورية التونسية في 24-48 ساعة، والتسليم يد بيد مع الدفع عند الاستلام.
+          3. افهمي قصد العميل بعمق (سواء سأل عن السعر، البري، قديش، التوصيل، الألوان، المقاسات، أو أبدى تردداً).
+          4. قومي دائماً بذكاء بتحفيز المشاهدين بين الحين والآخر على عمل "بارطاج (Share)" للبث لزيادة التفاعل والوصول، بطريقة محببة (مثل: "يا جماعة بارطاجيو اللايف باش يوصلكم الكل ويكبر اللمة!").
+          5. لا تقل أبداً أنك ذكاء اصطناعي أو بوت، أنتِ إنسانة ومسؤولة مبيعات حقيقية في اللايف.
+          6. اجعل إجابتك مختصرة، مقنعة، ومفعمة بالحيوية تماماً مثل البث المباشر الحقيقي.`
+        }
+      });
+      return response.text || 'مرحباً بكِ! تواصلي معنا للطلب أو لأي استفسار. ✨';
+    } catch (err) {
+      return 'أهلاً بك! تفضلي، نحن في الخدمة لأي استفسار عن المنتج أو التوصيل. 🛍️';
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatContent.trim()) return;
     setChatLoading(true);
 
     const senderName = chatUser.trim() ? chatUser.trim() : 'زائر';
-    const { error } = await supabase
-      .from('messages')
-      .insert([{ user_name: senderName, content: chatContent.trim() }]);
+    const userMsg = chatContent.trim();
 
+    // 1. حفظ رسالة الزائر في Supabase
+    await supabase.from('messages').insert([{ user_name: senderName, content: userMsg }]);
+
+    setChatContent('');
     setChatLoading(false);
-    if (error) {
-      alert('حدث خطأ أثناء إرسال الرسالة: ' + error.message);
-    } else {
-      setChatContent('');
-    }
+
+    // 2. توليد رد ذكاء Gemini التونسي وحفظه في Supabase ليظهر للجميع
+    const aiReplyText = await generateAiSalesReply(userMsg);
+    await supabase.from('messages').insert([{ user_name: '🛍️ مريم (مبيعات LiveFatt)', content: aiReplyText }]);
   };
 
   return (
     <div style={{ backgroundColor: '#090d16', color: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', padding: '15px' }}>
-      {/* Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '15px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ height: '12px', width: '12px', backgroundColor: '#ef4444', borderRadius: '50%', display: 'inline-block' }}></span>
@@ -93,13 +116,8 @@ export default function LiveFattPage() {
         </span>
       </header>
 
-      {/* Main Container */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-        
-        {/* Stream & Order Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          {/* Player */}
           <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px', border: '1px solid #1e293b', backgroundColor: '#000' }}>
             <iframe
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
@@ -109,7 +127,6 @@ export default function LiveFattPage() {
             />
           </div>
 
-          {/* Form Box */}
           <div style={{ backgroundColor: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>🛍️ طلب المنتج المعروض في البث</h2>
@@ -156,28 +173,33 @@ export default function LiveFattPage() {
               </form>
             )}
           </div>
-
         </div>
 
-        {/* Live Chat Section */}
+        {/* Live Chat & Gemini AI Sales Agent */}
         <div style={{ backgroundColor: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '550px' }}>
-          <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #1e293b', paddingBottom: '10px', fontSize: '16px' }}>الدردشة التفاعلية الحية</h3>
+          <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #1e293b', paddingBottom: '10px', fontSize: '16px' }}>الدردشة الحية ومساعد المبيعات الذكي</h3>
           
-          {/* Message List */}
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {messages.length === 0 ? (
-              <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>لا توجد رسائل بعد. كن أول من يعلق!</p>
+              <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>لا توجد رسائل بعد. جرب اسأل مريم بالدارجة أو بالفرانكو!</p>
             ) : (
               messages.map((msg, idx) => (
-                <div key={idx} style={{ backgroundColor: '#1e293b', padding: '10px', borderRadius: '8px' }}>
-                  <strong style={{ color: '#f97316', display: 'block', fontSize: '12px' }}>{msg.user_name}</strong>
+                <div 
+                  key={idx} 
+                  style={{ 
+                    backgroundColor: msg.user_name.includes('مريم') ? '#1e1b4b' : '#1e293b', 
+                    borderLeft: msg.user_name.includes('مريم') ? '4px solid #f97316' : 'none',
+                    padding: '10px', 
+                    borderRadius: '8px' 
+                  }}
+                >
+                  <strong style={{ color: msg.user_name.includes('مريم') ? '#fb923c' : '#38bdf8', display: 'block', fontSize: '12px' }}>{msg.user_name}</strong>
                   <span style={{ fontSize: '14px', color: '#f8fafc' }}>{msg.content}</span>
                 </div>
               ))
             )}
           </div>
 
-          {/* Chat Input Form */}
           <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <input
               type="text"
@@ -189,7 +211,7 @@ export default function LiveFattPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
-                placeholder="اكتب تعليقك..."
+                placeholder="اكتب استفسارك (مثلاً: بقدش السوم؟ أو qdch livraison؟)..."
                 required
                 value={chatContent}
                 onChange={(e) => setChatContent(e.target.value)}
@@ -200,12 +222,11 @@ export default function LiveFattPage() {
                 disabled={chatLoading}
                 style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
               >
-                {chatLoading ? '...' : 'إرسال'}
+                {chatLoading ? 'جاري...' : 'إرسال'}
               </button>
             </div>
           </form>
         </div>
-
       </div>
     </div>
   );
